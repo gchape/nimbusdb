@@ -7,12 +7,13 @@ NimbusDB is a lightweight, educational database system designed to provide a han
 NimbusDB is built with a focus on simplicity and educational value. It supports the following core features:
 
 - [x] **1. Storage Management**
-   - NimbusDB manages data storage at the block level, simulating how a real database handles physical data storage. Data is stored in pages (blocks), and operations such as reading and writing data to disk are abstracted to help users understand storage mechanisms.
-     
-     ![2025-03-16-Note-15-34](https://github.com/user-attachments/assets/b9e0e2e9-7bea-4673-b438-da4a8fcb44cb)
+   - NimbusDB manages data storage at the block level, simulating how an OS handles physical data storage. Data is addressed in blocks, read/write operations are handled by `FileMgr` and data is tranfered through pages.
+     `Page` has support for strings(charset=`US_ASCII`) as well as for _short_, _int_, _long_, _float_ and _double_ primitive types.
+
+     ![Untitled-2025-03-21-1507](https://github.com/user-attachments/assets/257d70d4-3766-4fca-854a-93e5c0a32c30)
 
 - [ ] **2. Transaction Management**
-   - NimbusDB includes basic support for transactions, ensuring that operations on the database are executed in a way that maintains data consistency. It handles commit and rollback mechanisms, allowing users to explore how a database system maintains integrity during concurrent operations.
+   - NimbusDB includes basic support for transactions, ensuring that operations on the database are executed in a way that maintains data consistency. It handles commit and rollback mechanisms.
 
 - [ ] **3. Indexing**
    - The database includes simple indexing mechanisms to help speed up query operations. It supports basic index structures, such as B+ trees, to demonstrate how indexing can optimize data retrieval and enhance performance in database systems.
