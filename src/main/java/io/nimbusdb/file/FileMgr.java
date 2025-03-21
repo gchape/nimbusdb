@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
@@ -11,14 +12,17 @@ import java.util.Map;
 import java.util.Set;
 
 public class FileMgr {
-    private final boolean isNew;
+    public static final Set<OpenOption> FILE_OPEN_OPTIONS = Set.of(StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
+
     private final int blocksize;
+    private final boolean isNew;
     private final Path dbDirectory;
-    private final Map<String, FileChannel> openFiles = new HashMap<>();
+    private final Map<String, FileChannel> channelPool;
 
     public FileMgr(final Path dbDirectory, final int blocksize) throws IOException {
         this.blocksize = blocksize;
         this.dbDirectory = dbDirectory;
+        this.channelPool = new HashMap<>();
 
         isNew = !Files.exists(dbDirectory);
         if (isNew) {
@@ -40,47 +44,44 @@ public class FileMgr {
         }
     }
 
-    public synchronized void read(Block blk, Page p) {
+    public synchronized void read(Block block, Page p) {
         try {
-            FileChannel fc = getFile(blk.fileName());
+            FileChannel fc = getFile(block.fname());
 
-            fc.position(blk.number() * blocksize);
+            fc.position((long) block.blknum() * blocksize);
             fc.read(p.contents());
         } catch (IOException e) {
-            throw new RuntimeException("cannot read block " + blk);
+            throw new RuntimeException("cannot read block " + block);
         }
     }
 
-    public synchronized void write(Block blk, Page p) {
+    public synchronized void write(Block block, Page p) {
         try {
-            FileChannel fc = getFile(blk.fileName());
+            FileChannel fc = getFile(block.fname());
 
-            fc.position(blk.number() * blocksize);
+            fc.position((long) block.blknum() * blocksize);
             fc.write(p.contents());
         } catch (IOException e) {
-            throw new RuntimeException("cannot write block" + blk);
+            throw new RuntimeException("cannot write block" + block);
         }
     }
 
     public synchronized Block append(String filename) {
-        int newBlknum = blockCount(filename);
-
-        Block blk = new Block(filename, newBlknum);
-        ByteBuffer emptyBlock = ByteBuffer.allocate(blocksize);
+        int blockCount = size(filename);
 
         try {
-            FileChannel fc = getFile(blk.fileName());
+            FileChannel fc = getFile(filename);
 
-            fc.position(blk.number() * blocksize);
-            fc.write(emptyBlock);
+            fc.position((long) blockCount * blocksize);
+            fc.write(ByteBuffer.allocate(blocksize));
         } catch (IOException e) {
-            throw new RuntimeException("cannot append block" + blk);
+            throw new RuntimeException("cannot append block");
         }
 
-        return blk;
+        return new Block(filename, blockCount);
     }
 
-    public int blockCount(String filename) {
+    public int size(String filename) {
         try {
             FileChannel fc = getFile(filename);
 
@@ -91,15 +92,14 @@ public class FileMgr {
     }
 
     private FileChannel getFile(String filename) throws IOException {
-        FileChannel fc = openFiles.get(filename);
+        Path dbTable = dbDirectory.resolveSibling(filename);
+        FileChannel fileChannel = channelPool.putIfAbsent(filename, FileChannel.open(dbTable, FILE_OPEN_OPTIONS));
 
-        if (fc == null) {
-            Path dbTable = dbDirectory.resolveSibling(filename);
-
-            fc = FileChannel.open(dbTable, Set.of(StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ, StandardOpenOption.SYNC));
-            openFiles.put(filename, fc);
+        if (fileChannel == null) {
+            fileChannel = channelPool.get(filename);
         }
-        return fc;
+
+        return fileChannel;
     }
 
     public boolean isNew() {
