@@ -6,19 +6,19 @@ import io.nimbusdb.file.Page;
 import io.nimbusdb.log.LogMgr;
 
 public class Buffer {
-    private final Meta m;
+    private final Meta $;
     private final Page contents;
     private final LogMgr logMgr;
     private final FileMgr fileMgr;
 
     private Block block;
 
-    public Buffer(FileMgr fileMgr, LogMgr logMgr, Page contents) {
+    public Buffer(FileMgr fileMgr, LogMgr logMgr) {
+        this.$ = new Meta();
+
         this.logMgr = logMgr;
         this.fileMgr = fileMgr;
-        this.contents = contents;
-
-        this.m = new Meta();
+        this.contents = new Page(fileMgr.blockSize());
     }
 
     public Page contents() {
@@ -30,15 +30,16 @@ public class Buffer {
     }
 
     public void setModified(int txId, int lsn) {
-        m.setModified(txId, lsn);
+        $.txId = txId;
+        if (lsn >= 0) $.lsn = lsn;
     }
 
     public int modifyingTx() {
-        return m.modifyingTx();
+        return $.txId;
     }
 
     public boolean isPinned() {
-        return m.isPinned();
+        return $.pins > 0;
     }
 
     void assign(Block block) {
@@ -46,53 +47,32 @@ public class Buffer {
 
         fileMgr.read(block, contents);
 
-        m.pinCount = 0;
+        $.pins = 0;
 
         this.block = block;
     }
 
     void flush() {
-        if (m.txId > 0) {
-            logMgr.flush(m.lsn);
+        if ($.txId > 0) {
+            logMgr.flush($.lsn);
 
             fileMgr.write(block, contents);
 
-            m.txId = 0;
+            $.txId = 0;
         }
     }
 
     void pin() {
-        m.pin();
+        $.pins++;
     }
 
     void unpin() {
-        m.unpin();
+        $.pins--;
     }
 
     private class Meta {
         private int lsn = -1;
         private int txId = -1;
-        private int pinCount = 0;
-
-        private void pin() {
-            pinCount++;
-        }
-
-        private void unpin() {
-            pinCount--;
-        }
-
-        private void setModified(int txId, int lsn) {
-            this.txId = txId;
-            if (lsn >= 0) this.lsn = lsn;
-        }
-
-        private int modifyingTx() {
-            return txId;
-        }
-
-        private boolean isPinned() {
-            return pinCount > 0;
-        }
+        private int pins = 0;
     }
 }
