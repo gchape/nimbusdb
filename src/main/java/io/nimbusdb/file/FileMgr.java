@@ -12,7 +12,11 @@ import java.util.Map;
 import java.util.Set;
 
 public class FileMgr {
-    public static final Set<OpenOption> FILE_OPEN_OPTIONS = Set.of(StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.SYNC);
+    public static final Set<OpenOption> FILE_OPEN_OPTIONS = Set.of(
+            StandardOpenOption.CREATE,
+            StandardOpenOption.READ,
+            StandardOpenOption.WRITE,
+            StandardOpenOption.SYNC);
 
     private final int blocksize;
     private final boolean isNew;
@@ -32,7 +36,7 @@ public class FileMgr {
         deleteTempFiles(dbDirectory);
     }
 
-    private static void deleteTempFiles(Path dbDirectory) throws IOException {
+    private void deleteTempFiles(Path dbDirectory) throws IOException {
         try (var entries = Files.list(dbDirectory)) {
             entries.filter(e -> String.valueOf(e.getFileName()).startsWith("temp")).forEach(tempFile -> {
                 try {

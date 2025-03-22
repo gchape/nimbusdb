@@ -11,36 +11,36 @@ class LogIterator implements Iterator<byte[]> {
     private final FileMgr fileMgr;
 
     private Block block;
-    private int position;
+    private int logpos;
 
     public LogIterator(FileMgr fileMgr, Block block) {
         this.block = block;
         this.fileMgr = fileMgr;
         this.page = new Page(new byte[fileMgr.blockSize()]);
 
-        setPosition(block);
+        setLogpos(block);
     }
 
     public boolean hasNext() {
-        return position < fileMgr.blockSize() || block.blknum() > 0;
+        return logpos < fileMgr.blockSize() || block.blknum() > 0;
     }
 
     public byte[] next() {
-        if (position == fileMgr.blockSize()) {
+        if (logpos == fileMgr.blockSize()) {
             block = new Block(block.fname(), block.blknum() - 1);
 
-            setPosition(block);
+            setLogpos(block);
         }
 
-        byte[] rec = page.getBytes(position);
-        position += Integer.BYTES + rec.length;
+        byte[] logrec = page.getBytes(logpos);
+        logpos += Integer.BYTES + logrec.length;
 
-        return rec;
+        return logrec;
     }
 
-    private void setPosition(Block block) {
+    private void setLogpos(Block block) {
         fileMgr.read(block, page);
 
-        position = page.getInt(0);
+        logpos = page.getInt(0);
     }
 }

@@ -11,47 +11,46 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class LogMgr {
+    private final Meta m;
     private final Page logpage;
     private final String logfile;
     private final FileMgr fileMgr;
 
-    private int latestLSN;
-    private int lastSavedLSN;
-    private Block currentBlock;
-
     public LogMgr(FileMgr fileMgr, String filename) {
+        this.m = new Meta();
         this.fileMgr = fileMgr;
         this.logfile = filename;
         this.logpage = new Page(new byte[fileMgr.blockSize()]);
 
         int blockCount = fileMgr.size(filename);
-        if (blockCount == 0) currentBlock = append();
+        if (blockCount == 0) m.block = append();
         else {
-            currentBlock = new Block(filename, blockCount - 1);
-            fileMgr.read(currentBlock, logpage);
+            m.block = new Block(filename, blockCount - 1);
+            fileMgr.read(m.block, logpage);
         }
+
     }
 
-    public synchronized int append(byte[] log) {
+    public synchronized int append(byte[] logrec) {
         int capacity = logpage.getInt(0);
-        int logsize = log.length + Integer.BYTES;
+        int logsize = logrec.length + Integer.BYTES;
 
-        if (capacity - logsize < Integer.BYTES) {
+        if (capacity - Integer.BYTES < logsize) {
             flush();
-            currentBlock = append();
+            m.block = append();
             capacity = logpage.getInt(0);
         }
 
         int logPosition = capacity - logsize;
         logpage.setInt(0, logPosition);
-        logpage.setBytes(logPosition, log);
-        latestLSN += 1;
+        logpage.setBytes(logPosition, logrec);
+        m.latestLSN += 1;
 
-        return latestLSN;
+        return m.latestLSN;
     }
 
     public void flush(int lsn) {
-        if (lsn >= lastSavedLSN) {
+        if (lsn >= m.savedLSN) {
             flush();
         }
     }
@@ -63,13 +62,13 @@ public class LogMgr {
     private Iterator<byte[]> iterator() {
         flush();
 
-        return new LogIterator(fileMgr, currentBlock);
+        return new LogIterator(fileMgr, m.block);
     }
 
     private void flush() {
-        fileMgr.write(currentBlock, logpage);
+        fileMgr.write(m.block, logpage);
 
-        lastSavedLSN = latestLSN;
+        m.savedLSN = m.latestLSN;
     }
 
     private Block append() {
@@ -78,5 +77,11 @@ public class LogMgr {
         fileMgr.write(block, logpage);
 
         return block;
+    }
+
+    private class Meta {
+        private int latestLSN;
+        private int savedLSN;
+        private Block block;
     }
 }

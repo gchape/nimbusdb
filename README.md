@@ -10,7 +10,7 @@ NimbusDB is built with a focus on simplicity and educational value. It supports 
    - NimbusDB manages data storage at the block level, simulating how an OS handles physical data storage. Data is addressed in blocks, read/write operations are handled by `FileMgr` and data is tranfered through pages.
      `Page` has support for strings(charset=`US_ASCII`) as well as for _short_, _int_, _long_, _float_ and _double_ primitive types.
 
-     ![Untitled-2025-03-21-1507](https://github.com/user-attachments/assets/257d70d4-3766-4fca-854a-93e5c0a32c30)
+     ![Untitled-2025-03-21-1507](https://github.com/user-attachments/assets/c517ba41-813a-453c-8082-7b7760c5081c)
 
 - [ ] **2. Transaction Management**
    - NimbusDB includes basic support for transactions, ensuring that operations on the database are executed in a way that maintains data consistency. It handles commit and rollback mechanisms.
