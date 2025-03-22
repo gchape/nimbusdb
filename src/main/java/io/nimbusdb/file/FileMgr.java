@@ -12,19 +12,20 @@ import java.util.Map;
 import java.util.Set;
 
 public class FileMgr {
-    public static final Set<OpenOption> FILE_OPEN_OPTIONS = Set.of(
-            StandardOpenOption.CREATE,
-            StandardOpenOption.READ,
-            StandardOpenOption.WRITE,
-            StandardOpenOption.SYNC);
-
-    private final int blocksize;
+    public static final Set<OpenOption> FILE_OPEN_OPTIONS =
+            Set.of(
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.READ,
+                    StandardOpenOption.WRITE,
+                    StandardOpenOption.SYNC
+            );
+    private final int blockSize;
     private final boolean isNew;
     private final Path dbDirectory;
     private final Map<String, FileChannel> channelPool;
 
-    public FileMgr(final Path dbDirectory, final int blocksize) throws IOException {
-        this.blocksize = blocksize;
+    public FileMgr(final Path dbDirectory, final int blockSize) throws IOException {
+        this.blockSize = blockSize;
         this.dbDirectory = dbDirectory;
         this.channelPool = new HashMap<>();
 
@@ -50,9 +51,9 @@ public class FileMgr {
 
     public synchronized void read(Block block, Page p) {
         try {
-            FileChannel fc = getFile(block.fname());
+            FileChannel fc = getFile(block.filename());
 
-            fc.position((long) block.blknum() * blocksize);
+            fc.position((long) block.id() * blockSize);
             fc.read(p.contents());
         } catch (IOException e) {
             throw new RuntimeException("cannot read block " + block);
@@ -61,9 +62,9 @@ public class FileMgr {
 
     public synchronized void write(Block block, Page p) {
         try {
-            FileChannel fc = getFile(block.fname());
+            FileChannel fc = getFile(block.filename());
 
-            fc.position((long) block.blknum() * blocksize);
+            fc.position((long) block.id() * blockSize);
             fc.write(p.contents());
         } catch (IOException e) {
             throw new RuntimeException("cannot write block" + block);
@@ -76,8 +77,8 @@ public class FileMgr {
         try {
             FileChannel fc = getFile(filename);
 
-            fc.position((long) blockCount * blocksize);
-            fc.write(ByteBuffer.allocate(blocksize));
+            fc.position((long) blockCount * blockSize);
+            fc.write(ByteBuffer.allocate(blockSize));
         } catch (IOException e) {
             throw new RuntimeException("cannot append block");
         }
@@ -89,7 +90,7 @@ public class FileMgr {
         try {
             FileChannel fc = getFile(filename);
 
-            return (int) (fc.size() / blocksize);
+            return (int) (fc.size() / blockSize);
         } catch (IOException e) {
             throw new RuntimeException("cannot access " + filename);
         }
@@ -111,6 +112,6 @@ public class FileMgr {
     }
 
     public int blockSize() {
-        return this.blocksize;
+        return this.blockSize;
     }
 }

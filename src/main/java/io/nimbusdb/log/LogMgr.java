@@ -11,22 +11,22 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class LogMgr {
-    private final Meta m;
+    private final Meta $;
     private final Page logpage;
     private final String logfile;
     private final FileMgr fileMgr;
 
     public LogMgr(FileMgr fileMgr, String filename) {
-        this.m = new Meta();
+        this.$ = new Meta();
         this.fileMgr = fileMgr;
         this.logfile = filename;
         this.logpage = new Page(new byte[fileMgr.blockSize()]);
 
         int blockCount = fileMgr.size(filename);
-        if (blockCount == 0) m.block = append();
+        if (blockCount == 0) $.block = append();
         else {
-            m.block = new Block(filename, blockCount - 1);
-            fileMgr.read(m.block, logpage);
+            $.block = new Block(filename, blockCount - 1);
+            fileMgr.read($.block, logpage);
         }
 
     }
@@ -37,20 +37,20 @@ public class LogMgr {
 
         if (capacity - Integer.BYTES < logsize) {
             flush();
-            m.block = append();
+            $.block = append();
             capacity = logpage.getInt(0);
         }
 
         int logPosition = capacity - logsize;
         logpage.setInt(0, logPosition);
         logpage.setBytes(logPosition, logrec);
-        m.latestLSN += 1;
+        $.latestLSN += 1;
 
-        return m.latestLSN;
+        return $.latestLSN;
     }
 
     public void flush(int lsn) {
-        if (lsn >= m.savedLSN) {
+        if (lsn >= $.savedLSN) {
             flush();
         }
     }
@@ -62,13 +62,13 @@ public class LogMgr {
     private Iterator<byte[]> iterator() {
         flush();
 
-        return new LogIterator(fileMgr, m.block);
+        return new LogIterator(fileMgr, $.block);
     }
 
     private void flush() {
-        fileMgr.write(m.block, logpage);
+        fileMgr.write($.block, logpage);
 
-        m.savedLSN = m.latestLSN;
+        $.savedLSN = $.latestLSN;
     }
 
     private Block append() {

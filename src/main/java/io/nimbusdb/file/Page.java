@@ -5,7 +5,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 public class Page {
-    public static final Charset CHARSET = StandardCharsets.US_ASCII;
+    public static final Charset US_ASCII = StandardCharsets.US_ASCII;
     private final ByteBuffer buffer;
 
     public Page(final int size) {
@@ -17,7 +17,7 @@ public class Page {
     }
 
     public static int maxByteLength(final int strLength) {
-        float maxBytesPerChar = CHARSET.newEncoder().maxBytesPerChar();
+        float maxBytesPerChar = US_ASCII.newEncoder().maxBytesPerChar();
 
         return Integer.BYTES + (strLength * (int) maxBytesPerChar);
     }
@@ -64,11 +64,11 @@ public class Page {
     }
 
     public String getString(final int offset) {
-        return new String(getBytes(offset), CHARSET);
+        return new String(getBytes(offset), US_ASCII);
     }
 
     public void setString(final int offset, final String value) {
-        setBytes(offset, value.getBytes(CHARSET));
+        setBytes(offset, value.getBytes(US_ASCII));
     }
 
     ByteBuffer contents() {

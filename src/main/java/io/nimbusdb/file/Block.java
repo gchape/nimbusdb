@@ -1,4 +1,4 @@
 package io.nimbusdb.file;
 
-public record Block(String fname, int blknum) {
+public record Block(String filename, int id) {
 }

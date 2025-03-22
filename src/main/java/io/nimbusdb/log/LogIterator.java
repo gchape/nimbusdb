@@ -22,12 +22,12 @@ class LogIterator implements Iterator<byte[]> {
     }
 
     public boolean hasNext() {
-        return logpos < fileMgr.blockSize() || block.blknum() > 0;
+        return logpos < fileMgr.blockSize() || block.id() > 0;
     }
 
     public byte[] next() {
         if (logpos == fileMgr.blockSize()) {
-            block = new Block(block.fname(), block.blknum() - 1);
+            block = new Block(block.filename(), block.id() - 1);
 
             setLogpos(block);
         }
